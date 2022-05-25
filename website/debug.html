@@ -1,0 +1,50 @@
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width">
+		<title>BlutoPi Control Panel</title>
+		<link rel="icon" type="image/png" href="../favicon.png">
+		<link href="../debug_style.css" rel="stylesheet" type="text/css" />
+		<link href="../arta.css" rel="stylesheet" type="text/css" />
+		<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
+	</head>
+
+	<body>
+		<div id="res"></div>
+
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="https://momentjs.com/downloads/moment.js"></script>
+		<script src="../init.js"></script>
+		<script type="text/javascript">
+			const params = new URLSearchParams(window.location.search)
+			let type = params.get("type")
+			let plural = (type == "crash" ? "es" : "s")
+			let app_name = params.get("app")
+			socket.emit('debug', type, app_name)
+
+			socket.on('debug', res => {
+				document.title = `[${type.toUpperCase()}] ${app_name}`
+				let res_elem = document.getElementById('res')
+				if (res.length == 0) {
+					let message = document.createElement('b')
+					message.innerText = `No ${type}${plural} reported`
+					res_elem.appendChild(message)
+				} else {
+					res.forEach((obj, ind) => {
+						let cont = document.createElement('div')
+						let post = document.createElement('code')
+						let timestamp = document.createElement('b')
+						timestamp.innerText = `{${ind+1}} [ ${moment(obj.time).format("	M/D/YY | h:mm:ss A")} ]\n`
+						timestamp.classList.add("timestamp")
+						post.innerHTML = `${hljs.highlight(obj.text, {language: "js"}).value}`
+						cont.appendChild(timestamp)
+						cont.appendChild(post)
+						cont.classList.add('post')
+						res_elem.appendChild(cont)
+					})
+				}
+			})
+		</script>
+	</body>
+</html>
