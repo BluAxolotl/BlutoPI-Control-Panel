@@ -45,7 +45,7 @@ Array.prototype.remove = function (index) {
 }
 
 function app_spawn(node_app) {
-	let p = spawn('node', [`D:\\NodeJS\\${node_app.package}\\${node_app.entry}`])
+	let p = spawn('node', [`NodeJS/${node_app.package}/${node_app.entry}`])
 	p.stdout.on('data', data => {
 		print(`[ ${node_app.name} ] ${data}`)
 		outs[node_app.name].push(data.toString())
