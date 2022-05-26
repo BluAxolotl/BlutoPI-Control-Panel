@@ -1,4 +1,5 @@
 const print = console.log
+const internalIp = require('internal-ip')
 const path = require('path')
 const { spawn } = require('node:child_process')
 const ini = require('multi-ini')
@@ -138,6 +139,6 @@ app.get('/debug', (req, res) => {
   res.sendFile('/debug.html', {root: path.join(__dirname, 'website')});
 })
 
-server.listen(1000, "0.0.0.0", () => {
+server.listen(1000, internalIp.v4.sync(), () => {
 	print("Lisening on port 1000")
 })
