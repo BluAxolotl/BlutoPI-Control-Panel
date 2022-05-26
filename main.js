@@ -139,6 +139,6 @@ app.get('/debug', (req, res) => {
   res.sendFile('/debug.html', {root: path.join(__dirname, 'website')});
 })
 
-server.listen(1000, internalIp.v4.sync(), () => {
-	print("Lisening on port 1000")
+server.listen(2026, internalIp.v4.sync(), () => {
+	print("Lisening on port 2026")
 })
