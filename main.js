@@ -11,11 +11,7 @@ const io = require('socket.io')(server);
 
 const apps_config = ini.read(`${__dirname}/apps.ini`)
 
-require('dotenv').config({ path: `${__dirname}/.env` })
-
-const ROOT = (process.env['root'] || "..")
-
-print(ROOT)
+const ROOT = (apps_config.root || "..")
 
 var node_apps = Object.keys(apps_config).map(node_app => {
 	let obj = apps_config[node_app]
