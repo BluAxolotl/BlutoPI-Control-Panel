@@ -11,6 +11,12 @@ const io = require('socket.io')(server);
 
 const apps_config = ini.read(`${__dirname}/apps.ini`)
 
+require('dotenv').config({ path: `${__dirname}/.env` })
+
+const ROOT = (process.env['root'] || "..")
+
+print(ROOT)
+
 var node_apps = Object.keys(apps_config).map(node_app => {
 	let obj = apps_config[node_app]
 	obj.name = node_app
@@ -46,7 +52,7 @@ Array.prototype.remove = function (index) {
 }
 
 function app_spawn(node_app) {
-	let p = spawn('node', [`../${node_app.package}/${node_app.entry}`])
+	let p = spawn('node', [`${ROOT}/${node_app.package}/${node_app.entry}`])
 	p.stdout.on('data', data => {
 		print(`[ ${node_app.name} ] ${data}`)
 		outs[node_app.name].push(data.toString())

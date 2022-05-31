@@ -4,11 +4,12 @@
   "description": "A web page to manage other node apps running on the BlutoPI",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "nodemon main.js"
   },
   "author": "Blutonium",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "internal-ip": "^6.2.0",
     "multi-ini": "^2.2.0",
