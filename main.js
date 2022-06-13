@@ -3,13 +3,18 @@ const internalIp = require('internal-ip')
 const path = require('path')
 const { spawn } = require('node:child_process')
 const ini = require('multi-ini')
+const fs = require('fs')
 
 const express = require('express')
 const app = express()
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 
-const apps_config = ini.read(`${__dirname}/apps.ini`)
+const APPS_PATH = `${__dirname}/apps.ini`
+
+if (!fs.existsSync(APPS_PATH)) { throw new Error("apps.ini Not Found") }
+
+const apps_config = ini.read(APPS_PATH)
 
 const ROOT = (apps_config.root || "..")
 
