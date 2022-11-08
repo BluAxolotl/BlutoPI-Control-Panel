@@ -6,7 +6,7 @@ var updateCount = {}
 
 var inputs = []
 
-function addLine(term, data) {
+function addLine(term, text, time) {
 	let a = term.scrollTop
 	let b = term.scrollHeight - term.clientHeight
 	let c = (a / b)*100;
@@ -14,7 +14,9 @@ function addLine(term, data) {
 		setTimeout(() => { term.scrollTo(0, term.scrollHeight) }, 1)
 	}
 	let line = document.createElement('p')
-	line.innerText = data
+	line.innerText = text
+	line.setAttribute('title', moment(time).format("MMM Do, YYYY [at] h:mm:ss A"))
+	line.classList.add("term-line")
 	term.appendChild(line)
 }
 
@@ -79,7 +81,7 @@ socket.on('init', (apps, outs, g_counts, g_status) => {
 		terminal.classList.add('terminal')
 		panel.appendChild(terminal)
 		local_out.forEach(data => {
-			addLine(terminal, data)
+			addLine(terminal, data.text, data.time)
 		})
 
 		let input_div = document.createElement('div')
@@ -112,9 +114,9 @@ socket.on('init', (apps, outs, g_counts, g_status) => {
 	})
 })
 
-socket.on('data', (app_name, data, type) => {
+socket.on('data', (app_name, data, time, type) => {
 	var terminal = document.getElementById(`term-${app_name}`)
-	addLine(terminal, data)
+	addLine(terminal, data, time)
 	switch (type) {
 		case "error":
 			updateCount[app_name]("err")

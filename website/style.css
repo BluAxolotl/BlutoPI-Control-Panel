@@ -117,3 +117,12 @@ p {
     overflow-wrap: break-word;
     overflow-y: auto;
 }
+
+.term-line {
+	transition-duration: 100ms;
+	opacity: 50%;
+}
+
+.term-line:hover {
+	opacity: 100%;
+}

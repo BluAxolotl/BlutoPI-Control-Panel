@@ -100,23 +100,30 @@ function init() {
 	})
 }
 
+function update_repo(bluto_app) {
+	return new Promise( async (res, rej) => {
+		var APP_PATH = `${ROOT}/${bluto_app.dirname}/`
+		if (fs.existsSync(APP_PATH)) {
+			await asyncExec("git reset --hard", {cwd: APP_PATH})
+			await asyncExec("git pull", {cwd: APP_PATH})
+		} else {
+			await asyncExec(`git clone ${bluto_app.git}`, {cwd: ROOT})
+		}
+		await asyncMultiExec(platforms[bluto_app.plat].update_cmds, {cwd: APP_PATH})
+		res("Done!")
+	})
+}
+
 async function update_repos() {
 	return new Promise((res, rej) => {
 		var app_count = bluto_apps.length
 		var updated = 0
-		bluto_apps.forEach(async (bluto_app, ind) => {
-			var APP_PATH = `${ROOT}/${bluto_app.dirname}/`
-			if (fs.existsSync(APP_PATH)) {
-				await asyncExec("git reset --hard", {cwd: APP_PATH})
-				await asyncExec("git pull", {cwd: APP_PATH})
-			} else {
-				await asyncExec(`git clone ${bluto_app.git}`, {cwd: ROOT})
-			}
-			await asyncMultiExec(platforms[bluto_app.plat].update_cmds, {cwd: APP_PATH})
+		bluto_apps.forEach(async (bluto_app) => {
+			await update_repo(bluto_app)
 			updated++
 			if (updated == app_count) {
 				print("Done updating!")
-				res("done!")
+				res("Done!")
 			}
 		})
 	})
@@ -150,40 +157,56 @@ function app_spawn(bluto_app) {
 	let p = spawn(cmd, args, {cwd: `${ROOT}/${bluto_app.dirname}/`})
 	p.stdout.on('data', data => {
 		print(`[ ${bluto_app.name} ] ${data}`)
-		outs[bluto_app.name].push(data.toString())
-		io.sockets.emit('data', bluto_app.name, data.toString(), "normal")
+		let currTime = Date.now()
+		outs[bluto_app.name].push({
+			text: data.toString(),
+			time: currTime
+		})
+		io.sockets.emit('data', bluto_app.name, data.toString(), currTime, "normal")
 	})
 	p.stderr.on(`data`, data => {
 		print(`[ ${bluto_app.name} ] ${data}`)
-		outs[bluto_app.name].push(data.toString())
+		let currTime = Date.now()
+		outs[bluto_app.name].push({
+			text: data.toString(),
+			time: currTime
+		})
 		counts[bluto_app.name].error++
 		debug[bluto_app.name].error.push({
 			text: data.toString(),
-			time: Date.now()
+			time: currTime
 		})
-		io.sockets.emit('data', bluto_app.name, data.toString(), "error")
+		io.sockets.emit('data', bluto_app.name, data.toString(), currTime, "error")
 	})
 	p.on('error', (err) => {
 		print(`[ ${bluto_app.name} ] ${err}`)
-		outs[bluto_app.name].push(err.toString())
+		let currTime = Date.now()
+		outs[bluto_app.name].push({
+			text: err.toString(),
+			time: currTime
+		})
 		counts[bluto_app.name].error++
 		debug[bluto_app.name].error.push({
 			text: err.toString(),
-			time: Date.now()
+			time: currTime
 		})
-		io.sockets.emit('data', bluto_app.name, err.toString(), "error")
+		io.sockets.emit('data', bluto_app.name, err.toString(), currTime, "error")
 	})
 	p.on('exit', (code, str) => {
 		if (code != null) {
 			let text = `Exited with code: ${code}\n\n\n[ SYSTEM ] Restarting app...\n\n\n`
 			print(`[ ${bluto_app.name} ] ${text}`)
-			outs[bluto_app.name].push(text)
+			let currTime = Date.now()
+			outs[bluto_app.name].push({
+				text: text,
+				time: currTime
+			})
 			counts[bluto_app.name].crash++
 			debug[bluto_app.name].crash.push({
 				text: `Exited with code: ${code}`,
-				time: Date.now()
+				time: currTime
 			})
-			io.sockets.emit('data', bluto_app.name, text, "exit")
+			io.sockets.emit('data', bluto_app.name, text, currTime, "exit")
 			app_spawn(bluto_app)
 		}
 	})
@@ -221,7 +244,8 @@ io.on('connection', socket => {
 			processes[app_name].kill()
 			let text = "\n\n\n[ SYSTEM ] PROCESS KILLED BY CONTROL PANEL\n\n\n"
 			outs[app_name].push(text)
-			socket.emit('data', app_name, text, "normal")
+			let currTime = Date.now()
+			socket.emit('data', app_name, text, currTime, "normal")
 		} else {
 			status[app_name] = 'ON'
 			app_spawn(bluto_apps[pid])
