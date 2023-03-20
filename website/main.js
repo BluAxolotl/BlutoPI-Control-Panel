@@ -35,7 +35,7 @@ socket.on('init', (apps, outs, g_counts, g_status) => {
 		let app_title = document.createElement('div')
 		app_title.classList.add("app-title")
 		let app_icon = document.createElement('img')
-		app_icon.src = `icons/${app.name}.png`
+		app_icon.src = app.icon
 		app_icon.classList.add('app-icon')
 		app_title.innerHTML = `${app_icon.outerHTML}&#8192${app.name}`
 		panel.appendChild(app_title)

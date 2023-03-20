@@ -4,6 +4,7 @@ const path = require('path')
 const { spawn, exec } = require('node:child_process')
 const ini = require('multi-ini')
 const fs = require('fs')
+const Stream = require('stream')
 const util = require('node:util')
 const asyncExec = (cmd, opts) => {
 	return new Promise((res, rej) => {
@@ -19,17 +20,15 @@ const asyncExec = (cmd, opts) => {
 	})
 }
 const asyncMultiExec = (cmds, opts) => {
-	return new Promise((res, rej) => {
-		var codes = []
-		var count = 0
-		cmds.forEach(async cmd => {
-			var code = await asyncExec(cmd, opts)
-			codes.push(code)
-			count++
-			if (count == cmds.length) {
-				res(codes)
-			}
+	return new Promise(async (res, rej) => {
+		var proms = []
+
+		cmds.forEach(cmd => {
+			proms.push(asyncExec(cmd, opts))
 		})
+
+		let codes = await Promise.all(proms)
+		res(codes)
 	})
 }
 const readline = require('readline')
@@ -38,7 +37,7 @@ const rl = readline.createInterface({
     output: process.stdout,
     historySize: 30,
     prompt: '$ '
-})		
+})
 
 const express = require('express')
 const app = express()
@@ -56,7 +55,7 @@ const APPS_PATH = `${__dirname}/apps.ini`
 const PLATS_PATH = `${__dirname}/plats.ini`
 
 if (!fs.existsSync(APPS_PATH)) { throw new Error("apps.ini Not Found") }
-	if (!fs.existsSync(PLATS_PATH)) { throw new Error("plats.ini Not Found") }
+if (!fs.existsSync(PLATS_PATH)) { throw new Error("plats.ini Not Found") }
 
 const apps_config = ini.read(APPS_PATH)
 const plats_config = ini.read(PLATS_PATH, {nested_section_names: true})
@@ -79,6 +78,12 @@ var bluto_apps = Object.keys(apps_config).map(bluto_app => {
 	let obj = apps_config[bluto_app]
 	obj.name = bluto_app
 	obj.dirname = obj.git.split("/")[4].split(".")[0]
+	obj.input = new Stream.Readable({
+    read(size) {
+      return true;
+    }
+  })
+	// obj.input.pipe(null)
 
 	outs[bluto_app] = []
 	debug[bluto_app] = {}
@@ -210,14 +215,29 @@ function app_spawn(bluto_app) {
 			app_spawn(bluto_app)
 		}
 	})
+
+	bluto_app.rl = readline.createInterface({
+		input: p.stdin,
+		output: p.stdout,
+	});
 	processes[bluto_app.name] = p
 }
 
 function send_line(app_name, line) {
+	let pid = Object.keys(apps_config).indexOf(app_name)
 	let p = processes[app_name]
+	p.stdin.setEncoding('utf-8')
+
 	p.stdin.cork()
-	p.stdin.write(line)
+	p.stdin.write(line+"\n")
 	p.stdin.uncork()
+
+	// let newStdin = new Stream.Writable()
+	// newStdin._write = (chunk, encoding, callback) => {
+		// p.stdin.write(chunk, encoding)
+		// callback()
+	// }
+	// p.stdin = newStdin
 }
 
 io.on('connection', socket => {
@@ -265,9 +285,12 @@ app.get('/debug', (req, res) => {
 })
 
 function init_webserver() {
-	server.listen(2026, internalIp.v4.sync(), () => {
-		print("Lisening on port 2026")
+	var host = internalIp.v4.sync()
+	var port = 2026
+	server.listen(port, host, () => {
+		print(`Lisening @ ${host}:${port}`)
 	})
 }
 // ******************************
 // t( / U)t < [ Hi weird people! ]
+
