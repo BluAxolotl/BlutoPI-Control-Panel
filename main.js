@@ -135,7 +135,7 @@ async function update_repos() {
 }
 
 function preinit_prompt() {
-	rl.question("Checks for updates? [Y/N] ", async function (answer) {
+	let answered = async function (answer) {
 		var answer = answer.toUpperCase()
 		if (["Y", "N"].includes(answer)) {
 			if (answer == "Y") {
@@ -146,7 +146,11 @@ function preinit_prompt() {
 		} else {
 			preinit_prompt()
 		}
-	})
+	}
+
+	if (process.env.QUESTION) { rl.question("Checks for updates? [Y/N] ", answered) } else {
+		answered(process.env.CHECK_FOR_UPDATES == "true" ? "Y" : "N")
+	}
 }
 
 preinit_prompt()
